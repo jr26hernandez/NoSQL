@@ -1,70 +1,56 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import db from './firebase-config.js';
+import { db } from './firebase-config.js';
 import {
   collection,
-  addDoc,
   getDocs,
-  updateDoc,
+  addDoc,
   deleteDoc,
-  doc
-} from 'firebase/firestore';
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const usersRef = collection(db, "users");
 
-const app = express();
-app.use(express.json());
-app.use(express.static('public'));  // serve static frontend files
+async function loadUsers() {
+  const snapshot = await getDocs(usersRef);
+  const ul = document.getElementById('userList');
+  ul.innerHTML = '';
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const li = document.createElement('li');
+    li.textContent = `${data.name} (${data.email})`;
+    li.innerHTML += ` <button onclick="deleteUser('${docSnap.id}')">Delete</button>`;
+    li.innerHTML += ` <button onclick="editUser('${docSnap.id}', '${data.name}', '${data.email}')">Edit</button>`;
+    ul.appendChild(li);
+  });
+}
 
-const usersCollection = collection(db, "users");
+async function addUser(e) {
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  if (!name || !email) return;
 
-// API routes
-app.get('/api/users', async (req, res) => {
-  try {
-    const snapshot = await getDocs(usersCollection);
-    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  await addDoc(usersRef, { name, email });
+  e.target.reset();
+  loadUsers();
+}
 
-app.post('/api/users', async (req, res) => {
-  try {
-    const { name, email } = req.body;
-    const docRef = await addDoc(usersCollection, { name, email });
-    res.json({ id: docRef.id, name, email });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+async function deleteUser(id) {
+  if (!confirm('Delete this user?')) return;
+  await deleteDoc(doc(db, "users", id));
+  loadUsers();
+}
 
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    const userRef = doc(db, "users", req.params.id);
-    await updateDoc(userRef, req.body);
-    res.json({ id: req.params.id, ...req.body });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+async function editUser(id, oldName, oldEmail) {
+  const name = prompt('New name:', oldName);
+  const email = prompt('New email:', oldEmail);
+  if (!name || !email) return;
 
-app.delete('/api/users/:id', async (req, res) => {
-  try {
-    const userRef = doc(db, "users", req.params.id);
-    await deleteDoc(userRef);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  await updateDoc(doc(db, "users", id), { name, email });
+  loadUsers();
+}
 
-// Serve the UI
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+document.getElementById('addForm').addEventListener('submit', addUser);
+window.deleteUser = deleteUser;
+window.editUser = editUser;
+loadUsers();
