@@ -1,16 +1,17 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+// firebase-config.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBVNhZ9M49dsxwvstgyM0N0JMXAlW9Eh-0",
-  authDomain: "crud-9cd5a.firebaseapp.com",
-  projectId: "crud-9cd5a",
-  storageBucket: "crud-9cd5a.appspot.com",
-  messagingSenderId: "892830386856",
-  appId: "1:892830386856:web:b8e310ae9efd23ac97909d"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-export default db;
+export { db };
